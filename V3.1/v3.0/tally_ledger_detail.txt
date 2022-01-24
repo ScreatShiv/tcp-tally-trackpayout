@@ -1,0 +1,334 @@
+
+[#Menu: Gateway of Tally]
+	
+;	Add: Item: Tally Ledger Detail	: Display: TPO_Ledger_Report
+	
+[Report: TPO_Ledger_Report]
+	
+	Form	: TPO_Ledger_Form
+	
+	Set		: SVFromDate	: $$Date:$StartingFrom:Company:$$CurrentCompany
+	Set		: SVToDate	: $$Date:$LASTVOUCHERDATE:Company:$$CurrentCompany
+[Form: TPO_Ledger_Form]
+	
+	Part	: TPO_Ledger_ColDetail
+	Height	: 100 % Page
+	Width	: 100 % Page
+
+[Part: TPO_Ledger_ColDetail]
+	
+	Line	: TPO_Ledger_ColDetail
+	Repeat	: TPO_Ledger_ColDetail	: TPO_Ledger_Collection_Src
+	Scroll	: Vertical
+	
+[Collection: TPO_Ledger_Collection_Src]
+	
+	Type		: Ledger
+	Parm Var	: SVFromDate	: Date: $StartingFrom:Company:$$CurrentCompany
+	Parm Var	: SVToDate		: Date: $LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+	Fetch		: Address.*, OpeningBalance, closingBalance, Name, parent, isdeemedpositive, $PrimaryGroup
+	Fetch		: AlterId,MasterID
+	;Filter		: IsTPOFilterLedger
+;	Filter		: ISNMae
+	
+[System: Formula]
+	
+	ISNMae		: $Name = "D"
+	
+[Line: TPO_Ledger_ColDetail]
+	
+	Field: TPO_ledger_subscription_id, TPO_ledger_company_id, TPO_ledger_guid,TPO_ledger_master_id,TPO_ledger_alter_ids, TPO_ledger_name, TPO_ledger_parent, TPO_ledger_address
+	Field: TPO_ledger_country_name, TPO_ledger_state_name, TPO_ledger_pin_code, TPO_ledger_mobile_number
+	Field: TPO_ledger_contact_person, TPO_ledger_phone_number, TPO_ledger_fax_number, TPO_ledger_email, TPO_ledger_email_cc
+	Field: TPO_ledger_website, TPO_ledger_credit_day,TPO_ledger_performance,TPO_ledger_gst_registration_type, TPO_ledger_gst_registration_number
+	Field: TPO_ledger_pan_or_it_number, TPO_ledger_opening_balance_date, TPO_ledger_opening_balance, TPO_ledger_op_bal_is_deemed_positive
+	Field: TPO_ledger_closing_balance_date, TPO_ledger_closing_balance, TPO_ledger_cl_bal_is_deemed_positive
+	Field: TPO_ledger_overduebill_balance,TPO_ledger_overduebill_is_deemed_positive
+	Field: TPO_ledger_is_deemed_positive, TPO_ledger_alter_id
+	JSONTag	: "Ledger"
+;	TPO_ledger_parent_alias,
+	Explode	: Ledger_Bill_Allocation: Yes
+;	Explode	: Ledger_Bill_Allocation_option: $$NumItems:BillAllocations = 0 And Not $$IsEmpty:$ClosingBalance
+	 
+;[!Part: Ledger_Bill_Allocation_option]
+;	
+;	Line: Ledger_Bill_Allocation_option
+;	Repeat: Ledger_Bill_Allocation_option	: COll_LV_On_Account_OPBAL
+;	Scroll: Vertical
+;	
+;[Collection: COll_LV_On_Account_OPBAL]
+;	
+;	Type	: Godown
+;	
+;	
+;[Line:  Ledger_Bill_Allocation_option]
+;	
+;	Field: TPO LedBilltype, TPO LedBillDt, TPO LedBillNo, TPO LedBillDueDt, TPO LedBillAmt, TPO LedDrOrCrBillAmt
+;	JSONTag	: "bill_allocation"
+;	Local: Field: TPO LedBillDt	: Set as	: $$TPO_DateMMYYYYFormat:$$Date:($LASTVOUCHERDATE:Company:$$CurrentCompany)
+;	Local: Field: TPO LedBillNo	: Set as	: "On Account"
+;	Local: Field: TPO LedBillDueDt	: Set as	: $$TPO_DateMMYYYYFormat:$$Date:($LASTVOUCHERDATE:Company:$$CurrentCompany)
+;	Local: Field: TPO LedBillAmt		: Set as	: if $$IsEmpty:$closingBalance then "0.00" else $$TPO_RemoveCharactersFromString:$closingBalance:"," 
+;	Local: Field: TPO LedDrOrCrBillAmt	: Set as: if $$IsDr:$ClosingBalance = "Yes" then "Yes" else "No"
+	
+[!Part: Ledger_Bill_Allocation]
+	
+	Line: Ledger_Bill_Allocation
+	Repeat: Ledger_Bill_Allocation	: BillAllocations
+	Scroll	: Vertical
+	
+[Line: Ledger_Bill_Allocation]
+	
+	Field: TPO LedBilltype, TPO LedBillDt, TPO LedBillNo, TPO LedBillDueDt, TPO LedBillAmt, TPO LedDrOrCrBillAmt
+	
+	JSONTag	: "bill_allocation"
+	
+[Field: TPO LedBilltype]
+	
+	Type	: String
+	Set as	: "OpeningBalance"
+	JSONTag	: "bill_type"
+	
+[Field: TPO LedBillDt]
+	
+	Type	: String	
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:$BillDate
+	JSONTag: "bill_date"
+	
+[Field: TPO LedBillNo]
+	
+	Type	: String	
+	Set as	: $Name
+	JSONTag: "bill_name"
+	
+[Field: TPO LedBillDueDt]
+
+	Type	: String
+	Set as	: if $$IsEmpty:$BillCreditPeriod then $$TPO_DateMMYYYYFormat:($$Date:$BillDate + $$Number:30) else $$TPO_DateMMYYYYFormat:$$Date:$BillCreditPeriod
+	JSONTag	: "bill_due_date"
+	
+[Field: TPO LedBillAmt]
+	
+	Type	: String	
+	Set as	: $$TPO_RemoveCharactersFromString:$OpeningBalance:","
+	JSONTag	: "bill_amount"
+	
+[Field: TPOLedDrOrCrBillAmt]
+	
+	Type	: String
+	Set as	: if $$IsDr:$OpeningBalance then "Yes" else "No"
+	JSONTag	: "is_deemed_positive"
+	 
+	
+
+[Field: TPO_ledger_subscription_id]
+	
+	Type	: String
+	Set as	: @@TPO_CMPSubscriptionDetail
+	JSONTag	: "subscription_id"
+	
+[Field: TPO_ledger_company_id]
+	
+	Type	: String
+	Set as	: @@IsTrackPayout_CMPID
+	JSONTag	: "company_id"
+	
+[Field: TPO_ledger_master_id]
+	Type	: String
+	Set as	: $MasterID
+	JSONTag	: "master_id"
+	
+[Field: TPO_ledger_alter_ids]
+	
+	Type	: String
+	Set as	: $AlterID
+	JSONTag	: "alter_id"
+	
+[Field: TPO_ledger_guid]
+	
+	Type	: String
+	Set as	: $guid
+	JSONTag	: "ledger_guid"
+	
+[Field: TPO_ledger_name]
+	
+	Type	: String
+	Set as	: $Name
+	JSONTag	: "ledger_name"
+	
+[Field: TPO_ledger_parent]
+	
+	Type	: String
+	Set as	: if ($$IsObjectBelongsTo:Group:$Parent:$$GroupSundryDebtors) then "Sundry Debtors" else +
+				if ($$IsObjectBelongsTo:Group:$Parent:$$GroupSundryCreditors) then "Sundry Creditors" else $_PrimaryGroup
+				
+	JSONTag	: "ledger_parent"
+;	
+;[Field: TPO_ledger_parent_alias]
+;	
+;	Type	: String
+;	Set as	: if ($$IsObjectBelongsTo:Group:$Parent:$$GroupSundryCreditors) then "Sundry Creditors"  
+;	JSONTag	: "ledger_parent_alias"
+;	
+[Field:  TPO_ledger_address]
+	
+	Type	: String	
+	Set as	: if $$IsEmpty:$$FullListEx:",":Address:$Address then "NA" else $$FullListEx:",":Address:$Address
+	JSONTag	: "ledger_address"
+	
+[Field: TPO_ledger_country_name]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$countryname then "NA" else $countryname
+	JSONTag	: "ledger_country_name"
+	
+[Field:  TPO_ledger_state_name]
+	
+	Type	: String	
+	Set as	: if $$IsEmpty:$ledstatename then "NA" else $ledstatename
+	JSONTag	: "ledger_state_name"
+	
+[Field: TPO_ledger_pin_code]
+	
+	Type	: String	
+	Set as	: if $$IsEmpty:$pincode then "NA" else $pincode
+	JSONTag	: "ledger_pin_code"
+	
+[Field: TPO_ledger_mobile_number]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$ledgerMobile then "NA" else $ledgerMobile
+	JSONTag	: "ledger_mobile_number"
+	
+[Field: TPO_ledger_contact_person]
+	
+	Type	: String	
+	Set as	: if $$IsEmpty:$ledgercontact then "NA" else $ledgercontact
+	JSONTag	:"ledger_contact_person"
+	
+[Field: TPO_ledger_phone_number]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$ledgerPhone then "NA" else $ledgerPhone
+	JSONTag	: "ledger_phone_number"
+	
+[Field: TPO_ledger_fax_number]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$ledgerFax then "NA" else $ledgerFax
+	JSONTag	: "ledger_fax_number"
+	
+[Field: TPO_ledger_email]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$email then "NA" else $email
+	JSONTag	: "ledger_email"
+	
+[Field:  TPO_ledger_email_cc]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$email_cc then "NA" else $email_cc
+	JSONTag	: "ledger_email_cc"
+	
+[Field: TPO_ledger_website]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$website then "NA" else $website
+	JSONTag	: "ledger_website"
+	
+[Field: TPO_ledger_credit_day]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$$Number:$BillCreditPeriod then "0" else $$Number:$BillCreditPeriod
+	JSONTag	: "ledger_credit_day"
+	
+[Field: TPO_ledger_performance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$_Performance then "0" else $_Performance
+	JSONTag	: "ledger_performance"
+	
+	
+[Field: TPO_ledger_gst_registration_type]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$GSTRegistrationType then "NA" else $GSTRegistrationType
+	JSONTag	: "ledger_gst_registration_type"
+	
+[Field: TPO_ledger_gst_registration_number]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$PartyGSTIN then "NA" else $PartyGSTIN
+	JSONTag	: "ledger_gst_registration_number"
+	
+[Field: TPO_ledger_pan_or_it_number]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$IncomeTaxNumber then "NA" else $IncomeTaxNumber
+	JSONTag	: "ledger_pan_or_it_number"
+	
+[Field: TPO_ledger_opening_balance_date]
+	
+	Type	: String
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($TPO_SyncFromDate:Company:$$CurrentCompany)
+	JSONTag	: "ledger_opening_balance_date"
+	
+[Field: TPO_ledger_opening_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$openingbalance then "0.00" else $$TPO_RemoveCharactersFromString:$openingbalance:","
+	JSONTag	: "ledger_opening_balance"
+	
+[Field: TPO_ledger_op_bal_is_deemed_positive]
+
+	Type	: String
+	Set as	: if $$IsDr:$OpeningBalance then "Yes" else "No"
+	JSONTag	: "ledger_op_bal_is_deemed_positive"
+	
+[Field: TPO_ledger_closing_balance_date]
+	
+	Type	: String
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($LASTVOUCHERDATE:Company:$$CurrentCompany)
+	JSONTag	: "ledger_closing_balance_date"
+	
+[Field: TPO_ledger_closing_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$closingBalance then "0.00" else $$TPO_RemoveCharactersFromString:$closingBalance:"," 
+	JSONTag	: "ledger_closing_balance"
+	
+[Field: TPO_ledger_cl_bal_is_deemed_positive]
+
+	Type	: String
+;	Set as	: if $$IsDr:$ClosingBalance = "Yes" then "Yes" else "No"
+	Set as	: if $$IsDr:$ClosingBalance = "Yes" then "Yes" else "No"
+	JSONTag	: "ledger_cl_bal_is_deemed_positive"
+ 
+[Field: TPO_ledger_overduebill_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$OverDueBills then "0.00" else  $$TPO_RemoveCharactersFromString:$OverDueBills:"," 
+	JSONTag	: "ledger_bill_overdue_balance"
+	
+[Field: TPO_ledger_overduebill_is_deemed_positive]
+	
+	Type	: String
+	Set as	:  if $$IsDr:$OverDueBills = "Yes" then "Yes" else "No"
+	JSONTag	: "ledger_overduebill_is_deemed_positive"
+	
+[Field:TPO_ledger_is_deemed_positive]
+	
+	Type	: String	
+	Set as	: $IsDeemedPositive
+	JSONTag	: "ledger_is_deemed_positive"
+	
+[Field: TPO_ledger_alter_id]
+	
+	Type	: String
+	Set as	: $alterId
+	JSONTag	: "ledger_alter_id"
+	
+
+
+

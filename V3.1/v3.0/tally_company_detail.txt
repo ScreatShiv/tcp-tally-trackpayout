@@ -1,0 +1,136 @@
+;
+;[#Menu: Gateway of Tally]
+;	
+;	Add: Item: Tally Company Detail	: Display: TPO_Company_Report
+;	
+[Report: TPO_Company_Report]
+	
+	Form: TPO_Company_Form
+	
+[Form: TPO_Company_Form]
+	
+	Part: TPO_Company_ColDetail
+	
+[Part: TPO_Company_ColDetail]
+	
+	Line	: TPO_Company_ColDetail
+	Scroll	: Vertical
+ 
+[Line: TPO_Company_ColDetail]
+	
+	Field: TPO_CPDT_SUB_ID, TPO_CPDT_ID, TPO_CPDT_Tally_COMP_NUmber, TPO_CPDT_Tally_COMP_GUID,TPO_CPDT_Tally_COMP_Name,
+	Field: TPO_CPDT_formal_name, TPO_CPDT_address, TPO_CPDT_country, TPO_CPDT_state
+	Field: TPO_CPDT_pin_code, TPO_CPDT_books_from, TPO_CPDT_phone_number, TPO_CPDT_mobilenumber, TPO_CPDT_fax_number
+	Field: TPO_CPDT_email, TPO_CPDT_website, TPO_CPDT_lastVoucher_date
+	Field: TPO_CPDT_Last_Master_ID, TPO_CPDT_Voucher_ID
+	Field	: TPO_CPDT_Last_Sync, TPO_CPDT_Path
+	JSONTag	: "Company"
+	
+
+[Field: TPO_CPDT_formal_name]
+	
+	Set as	: $basiccompanyformalname:company:##SVCurrentCompany
+	JSONTag	: "company_formal_name"
+	
+[Field: TPO_CPDT_address]
+	
+	Set as	: $$FullListEx:";":CompanyAddress:$Address
+	JSONTag	: "company_address"
+ 
+[Field: TPO_CPDT_country]
+		
+	Set as	: $countryname:company:##SVCurrentCompany
+	JSONTag	: "company_country"
+	
+[Field:  TPO_CPDT_state]
+	
+	Set as	: $statename:company:##SvCurrentCompany
+	JSONTag	: "company_state"
+	
+[Field: TPO_CPDT_pin_code]
+	
+	Set as	: $pincode:company:##SvCurrentCompany
+	JSONTag	: "company_pin_code"
+	
+[Field: TPO_CPDT_books_from]
+	
+	Set as	: $startingFrom:company:##SvCurrentCompany
+	JSONTag	: "company_books_from"
+	
+[Field: TPO_CPDT_phone_number]
+	
+	Set as	: $phoneNumber:company:##SvCurrentCompany
+	JSONTag	: "company_phone_number"
+	
+[Field: TPO_CPDT_mobilenumber]
+	
+	Set as	: $MobileNumbers:company:##SvCurrentCompany
+	JSONTag	: "company_mobile_number"
+	
+[Field: TPO_CPDT_fax_number]
+	
+	Set as	: $faxnumber:company:##SvCurrentCompany
+	JSONTag	: "company_fax_number"
+	
+[Field: TPO_CPDT_email]
+	
+	Set as	: $email:Company:##SVCurrentCompany
+	JSONTag	: "company_email"
+	
+[Field: TPO_CPDT_website]
+	
+	Set as	: $website:Company:##SVCurrentCompany
+	JSONTag	: "company_website"
+	
+[Field: TPO_CPDT_lastVoucher_date]
+	
+	Set as	: $$TPO_DateMMYYYYFormat:($$Date:$LastVoucherDate:Company:##SVCurrentCompany)
+	JSONTag	: "company_last_voucher_date"
+	
+[Field: TPO_CPDT_SUB_ID]
+	
+	Set as	: @@TPO_CMPSubscriptionDetail
+	JSONTag	: "subscription_id"
+	
+[Field: TPO_CPDT_ID]
+ 
+	JSONTag	: "company_id"
+	Set as	: @@IsTrackPayout_CMPID
+	Set Always	: Yes
+	
+[Field: TPO_CPDT_Tally_COMP_NUmber]
+	
+	Set as	: $CompanyNUmber:Company:##SVCurrentCompany
+	JSONTag	: "company_number"
+	
+[Field: TPO_CPDT_Tally_COMP_GUID]
+
+	Set as	: $GUID:Company:##SVCurrentCompany
+	JSONTag	: "company_guid"
+	
+[Field: TPO_CPDT_Tally_COMP_Name]
+	
+	Set as	: $Name:Company:##SVCurrentCompany
+	JSONTag	: "company_name"
+	
+[Field: TPO_CPDT_Last_Master_ID]
+	
+	Set as	: $TPO_Prev_CMPCMDetail:Company:##SVCurrentCompany
+	JSONTag	: "company_last_master_id"
+	
+[Field: TPO_CPDT_Voucher_ID]
+	
+	Set as	: $TPO_Prev_CMPTRDetail:Company:##SVCurrentCompany
+	JSONTag	: "company_last_voucher_id"
+	
+[Field: TPO_CPDT_Last_Sync]
+	
+	Set as	: $$TPO_DateMMYYYYFormat:$$SysInfo:SystemDate + " " + $$SysInfo:SystemTime + ":00"
+	JSONTag	: "last_sync_date_time"
+	
+[Field: TPO_CPDT_Path]
+	
+	Use		: Name Field
+	Set as	: $Destination:Company:##SVCurrentCompany
+	JSONTag	: "company_directory_path"
+	

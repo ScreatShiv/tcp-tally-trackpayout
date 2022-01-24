@@ -1,0 +1,189 @@
+
+
+[#Menu: Gateway of Tally]
+	
+;	Add: Item: Tally DebitNote Detail	: Display: TPO_DebitNote_Report
+[Report	: TPO_DebitNote_Report]
+	
+	Form	: TPO_DebitNote_Form
+
+	Set		: SVFromDate	: $$Date:$StartingFrom:Company:$$CurrentCompany
+	Set		: SVToDate	: $$Date:$LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+[Form: TPO_DebitNote_Form]
+	
+	Part: TPO_DebitNote_ColDetail
+	
+	Height	: 100 % Page
+	Width	: 100 % Page
+	
+[Part: TPO_DebitNote_ColDetail]
+	
+	Line	: TPO_DebitNote_ColDetail
+	Repeat	: TPO_DebitNote_ColDetail	: TPO_DebitNote_LedgerEntries_Collection_Src
+	Scroll	: Vertical	
+	
+[Collection: TPO_DebitNote_Collection_Src]
+	
+	Parm Var	: SVFromDate	: Date: $StartingFrom:Company:$$CurrentCompany
+	Parm Var	: SVToDate		: Date: $LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+	Type		: Vouchers: VoucherType
+	Child Of	: $$VchTypeDebitNote
+	Belongs To	: Yes
+	Fetch		: ?,alterid
+	Fetch		: ledgerEntries.*, BankAllocations.*
+	Filter		: GetFiltertheReport
+	
+[Collection: TPO_DebitNote_LedgerEntries_Collection_Src]
+	
+	Source Collection	: TPO_DebitNote_Collection_Src
+	Walk				: LedgerEntries
+	Fetch		: ?,Guid,VoucherTypeName, PartyLedgerName, VoucherNumber, Date, IsOptional, IsCancelled, isDeleted, IsPostDated
+	Fetch		: AlterID, MasterID
+	Fetch				: BillAllocations.*
+;subscription_id	company_id	guid	voucher_type	voucher_type_alias	
+;date	financial_year	voucher_number	ledger_id	
+;is_optional	is_deleted	is_post_dated	is_cancelled
+;amount	is_deemed_positive
+
+;Bank Party Name, 
+
+[Line: TPO_DebitNote_ColDetail]
+	
+	Field: TPO_DebitNote_subscription_id, TPO_DebitNote_company_id, TPO_DebitNote_master_id, TPO_DebitNote_alter_id,	TPO_DebitNote_guid, TPO_DebitNote_voucher_type, TPO_DebitNote_voucher_type_alias
+	Field: TPO_DebitNote_date	, TPO_DebitNote_voucher_number, TPO_DebitNote_ledger_id
+	Field: TPO_DebitNote_is_optional, TPO_DebitNote_is_deleted, TPO_DebitNote_is_post_dated, TPO_DebitNote_is_cancelled
+	Field: TPO_DebitNote_amount, TPO_DebitNote_is_deemed_positive
+	
+	JSONTag	:"DebitNote"
+
+	Local	: Field: Default	: Type	: String
+	Local	: Field: Default	: Border	: THick Left
+	
+	
+	Explode	: TPO_DebitNote_Bill_Allocations: Yes
+	
+[Part: TPO_DebitNote_Bill_Allocations]
+	
+	Line	: TPO_DebitNote_Bill_Allocations
+	Repeat	: TPO_DebitNote_Bill_Allocations		: BillAllocations
+	Scroll	: Vertical
+	
+[Line: TPO_DebitNote_Bill_Allocations]
+		
+	Field: TPO_DebitNote_bill_type,TPO_DebitNote_bill_date
+	Field: TPO_DebitNote_bill_name, TPO_DebitNote_bill_due_date, TPO_DebitNote_bill_amount, TPO_DebitNote_bill_dr_or_cr
+
+	JSONTag		: "bill_allocation"
+	
+[Field: TPO_DebitNote_bill_type]
+	
+	
+	Set as	: $BillType
+	JSONTag	: "bill_type"
+	
+[Field: TPO_DebitNote_bill_date]
+	
+	Set as	: if $$IsEmpty:$BillDate then $$TPO_DateMMYYYYFormat:$$Date:$BillDate else $$TPO_DateMMYYYYFormat:$$Date:$BillDate
+	JSONTag	: "bill_date"
+	
+[Field:  TPO_DebitNote_bill_name]
+	
+	Set as	: if $$IsEmpty:$Name then "NA" else $Name
+	JSONTag	: "bill_name"
+	
+[Field: TPO_DebitNote_bill_due_date]
+
+	Type	: Due Date
+	Set as	: if $$IsEmpty:$BillCreditPeriod then $$TPO_DateMMYYYYFormat:$$Date:$BillDate else $$TPO_DateMMYYYYFormat:$$Date:$BillCreditPeriod
+	JSONTag	: "bill_due_date"
+	
+[Field: TPO_DebitNote_bill_amount]
+		
+	Set as	: $$TPO_RemoveCharactersFromString:$amount:","
+	JSONTag	: "bill_amount"
+	
+[Field: TPO_DebitNote_bill_dr_or_cr]
+		
+	Set as	: if $$IsDr:$amount then "Yes" else "No"; $IsDeemedPositive
+	JSONTag	: "is_deemed_positive"
+	
+[Field: TPO_DebitNote_subscription_id]
+	
+	Set as	: @@TPO_CMPSubscriptionDetail
+	JSONTag	: "subscription_id"
+[Field: TPO_DebitNote_company_id]
+	
+	Set as	: @@IsTrackPayout_CMPID
+	JSONTag	: "company_id"
+	
+[Field: TPO_DebitNote_master_id]
+	
+	Set as	: $MasterID
+	JSONTag	: "master_id"
+ 
+[Field: TPO_DebitNote_alter_id]
+	
+	Set as	: $AlterID
+	JSONTag	: "alter_id"
+	
+
+[Field: TPO_DebitNote_guid]
+
+	Set as	: $Guid
+	JSONTag	: "guid"
+[Field: TPO_DebitNote_voucher_type]
+	
+	Set as	: $voucherTypeName
+	JSONTag	: "voucher_type"
+[Field: TPO_DebitNote_voucher_type_alias]
+	
+	Set as	: "DebitNote"
+	JSONTag	: "voucher_type_alias"
+[Field: TPO_DebitNote_date]
+	
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:$Date
+	JSONTag	: "date"
+[Field: TPO_DebitNote_voucher_number]
+	
+	Set as	: $VoucherNUmber
+	JSONTag	: "voucher_number"
+[Field: TPO_DebitNote_ledger_id]
+	
+	Set as	: $guid:Ledger:$LedgerName
+	JSONTag: "ledger_id"
+[Field: TPO_DebitNote_is_optional]
+	
+	Set as	: $IsOptional
+	JSONTag	: "is_optional"
+	
+[Field: TPO_DebitNote_is_deleted]
+		
+	Set as	: $IsDeleted
+	JSONTag	: "is_deleted"
+[Field: TPO_DebitNote_is_post_dated]
+		
+	Set as	: $IsPostDated
+	JSONTag	: "is_post_dated"
+	
+[Field: TPO_DebitNote_is_cancelled]
+	
+	Set as	: $IsCancelled
+	JSONTag	: "is_cancelled"
+[Field: TPO_DebitNote_amount]
+	
+	Set as	: $$TPO_RemoveCharactersFromString:$Amount:","
+	JSONTag	: "amount"
+	
+[Field: TPO_DebitNote_is_deemed_positive]
+
+	Set as	: if $$IsDr:$amount then "Yes" else "No"; $IsDeemedPositive
+	JSONTag	: "is_deemed_positive"
+	
+
+	
+
+	
+	
+	

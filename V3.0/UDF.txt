@@ -1,0 +1,30 @@
+[System: UDF]
+	
+	TPO_CMPAddOn	: Logical: 101
+	TPO_CMPDetail	: String	: 102
+
+	TPO_Prev_CMPCMDetail		: Number	: 201	
+	TPO_Curr_CMPCMDetail		: Number	: 205
+	
+
+	TPO_Curr_CMPTRDetail		: Number	: 301
+	TPO_Prev_CMPTRDetail		: Number	: 302
+	
+
+	TPOEnbOnLoadCMP					: Logical	: 305
+	TPOEnbOnQuitCMP					: Logical	: 307
+	
+	TPO_TSPLFFEUCBSchedularTIme		: Number	: 310
+	TPO_TSPLFFEEnbLe				: Logical	: 312
+	TPO_IPAddress					: String	: 315
+	
+	TPO_CMPSubscriptionDetail		: String	: 319
+	TPO_SyncFromDate				: Date	: 401
+	
+
+	Aggr_TPO_Deleted_Master_voucher	: Aggregate: 1456
+	TPO_DMV_Created_at		: String: 1460
+	TPO_DMV_GUID		: String: 1462
+	TPO_DMV_GUID2		: String: 1464
+	TPO_DMV_GUID3		: String: 1466
+	

@@ -1,0 +1,486 @@
+;[#Part: Company F11 Other Features]
+;	
+;	Use		: Cfg Part Content Template
+;	
+;	Local	: Line	: Cfg PartTitle			: Invisible	: NOT ##CmpShowMoreConfig
+;	Local	: Field	: Cfg PartTitle			: Set as	: $$LocaleString:"Others"
+;	
+;	Local	: Part	: Cfg PartContent		: Add		: Lines   : CMP MultiAddressOn, CMP Enable TrackVouchers
+;	
+;	Local	: Part	: Cfg PartContent		: Add: Line: TPO_CMPAddOn	
+
+
+[#Part: CMP TallyShopFeatures Left]
+ 
+	Add: Line: Before: CMPTallyNetEmpty: TPO_CMPAddOn
+
+ [Line: TPO_CMPAddOn]
+	
+	Field	: Medium Prompt	, TPO_CMPAddOn
+	
+	Local: Field: Medium Prompt	: Info: $$LocaleString:"Enable TrackPayout Sync :"
+	Local: Field: Medium Prompt	: Color	: Blue	
+	
+	
+[Field: TPO_CMPAddOn]
+	
+	Use		: Logical Field
+	Storage	: TPO_CMPAddOn
+	Set		: No
+	Sub Form	: TrackPayoutDetailPassWord : $$Value = "Yes"
+	
+[#Menu: Gateway of Tally]
+		
+	Add: Button: At End: Button_TrackPayoutPage
+	
+[Button: Button_TrackPayoutPage]
+	
+	Title: "TrackPayOut Page"
+	Key		: CTRL + Q
+	Action	: Alter: TrackPayoutDetailPassWord
+	
+[Report: TrackPayoutDetailPassWord]
+	Object	: Company
+	Form: TrackPayoutDetailPassWord
+	
+[Form: TrackPayoutDetailPassWord]
+	
+	Part: Form Subtitle, TrackPayoutDetailPassWord
+	
+	Height	: 20 % Page	
+	Width	: 30 % Page	
+	Local	: Field: Form Subtitle	: Info	: $$LocaleString:"Track Payout Security Control"
+	
+[Part: TrackPayoutDetailPassWord]
+	
+	Line: TrackPayoutDetailPassWord
+	
+[Line: TrackPayoutDetailPassWord]
+	
+	Field: Simple Prompt	, TrackPayoutDetailPassWord, TrackPayoutDetailPassWordSet
+	Local: Field	: Simple Prompt	: Set as: $$LocaleString:"Enter Password"
+	Local: Field	: Simple Prompt	: Width	: 20 % Page	
+	
+[Field: TrackPayoutDetailPassWord]
+	
+	Use			: Name Field
+	Modifies	: VARTPOPassword1
+	Sub Form	: TrackPayoutDetailRep :$$Value = #TrackPayoutDetailPassWordSet 
+	Width		: 20 % Page
+	Set as		: "track@202122"
+	Control	: TrackPayout_IncorrectPassword	: $$Value != #TrackPayoutDetailPassWordSet 
+	
+[System: Formula]
+	
+	TrackPayout_IncorrectPassword	: "Incorrect Password"
+	
+[Field: TrackPayoutDetailPassWordSet]
+	Use	: Name Field
+	Modifies	: VARTPOPassword2
+	Set			: "track@202122"
+	Read Only	: Yes
+	Skip		: Yes
+	Invisible	: Yes
+	
+
+[Report: TrackPayoutDetailRep]
+	
+	Form: TrackPayoutDetailForm
+	
+[Form: TrackPayoutDetailForm]
+	
+	Part	: Form Subtitle, TrackPayoutDetailPart
+	
+	Local	: Line: Form Subtitle	: Space Top: .5
+	Local	: Field: Form Subtitle	: Info	: $$LocaleString:"Track Payout Detail"
+	
+	Height	: 50 % Page	
+	Width	: 40 % Page	
+	Space Top   : If $$InPrintMode then  0.5 else 0 inches
+    Space Bottom: If $$InPrintMode then  0.5 else 0 inches
+    Space Left  : If $$InPrintMode then  0.5 else .1 inches
+    Space Right : If $$InPrintMode then  0.5 else 0.1 inches
+	Button	: BTN LedgerExp, BTN SalesExp, BTN ReceiptExp,BTN DebitVoucherExp, BTN CreditVoucherExp, BTN UpdateID, BTN_LastSYnc, BTN_RegisterCompany
+	
+[Part: TrackPayoutDetailPart]
+	
+	Lines   : TPO_CMPGUID, TPO_IPAddress, TPO_CMPSubscriptionDetail,  TPO_CMPDetail,TPO_TSPL FFE Enable UCB, TPO_TSPL FFE Enable UCBClose, TPO_TSPL FFE Enable Timer, TPO_TSPL FFE UCB SchedularTIme
+	Line	: TPO_SyncFromDate
+	Line: TPO_CMPCMDetail , TPO_CMPTRDetail
+	
+	Local	: Line	: Default	: Space Top: .2
+	Local	: Line	: Default	: Space Bottom: .1
+	Local: Field: Long Prompt:	Color	: BLue	
+	
+	
+	
+[Button: BTN LedgerEXp]
+	
+	Title	: "Export Ledger"
+	Key		: ALT + L
+	Action	: Call: Func ExpLedgerTPO
+	
+[Button: BTN SalesExp]
+	
+	Title	: "Export Sales"
+	Key		: ALT + S
+	Action	: Call: Func ExpSalesTPO
+	
+[Button: BTN ReceiptExp]
+	
+	Title	: "Export Receipt"
+	Key		: ALT + R
+	Action	: Call: Func ExpReceiptTPO
+	
+[Button: BTN DebitVoucherExp]
+	
+	Title	: "Export Debit Voucher"
+	Key		: ALT + D
+	Action	: Call: FuncExpAllDebitVoucherTPO
+	
+[Button: BTN CreditVoucherExp]
+	
+	Title	: "Export Credit Voucher"
+	Key		: CTRL + C
+	Action	: Call: FuncExpAllCreditVoucherTPO
+	
+
+[Button: BTN UpdateID]
+	
+	Title	: "Update ID"
+	Key		: ALT + I
+	Action	: Call: Func UpdateID
+	
+[Button: BTN_LastSYnc]
+	
+	Title	: "Last Sync"
+	Key		: CTRL + E
+	Action	: Call: Func UpdateLastSyncDateTime 
+	
+[Button	: BTN_RegisterCompany]
+	
+	Title	: "Sign up"
+	Key		: CTRL + M
+	Action	: Call: Func registertallyCompany
+	
+[Function: FUnc ExpLedgerTPO]
+	
+	005: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Exporting Ledger "
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "LedgerExport.json"
+    
+	115: Export:TPO_ALL_Ledger_Rep : Yes:Yes
+	
+	200	: Msg Box:"Done":"Ledger Export Successfully"
+	300	: End Msg Box
+	
+[Function: FUnc ExpSalesTPO]
+	
+	005: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Exporting Sales Voucher "
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "SaleExport.json"
+    
+	115: Export:TPO_ALL_SalesVoucher_Rep : Yes:Yes
+	200: Msg Box:"Done":"Sales Export Successfully"
+	300	: End Msg Box
+	
+[Function: FUnc ExpReceiptTPO]
+	
+	005: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Exporting Receipt Voucher "
+	
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "ReceiptExport.json"
+    
+	115: Export:TPO_ALL_ReceiptVoucher_Rep : Yes:Yes
+	200: Msg Box:"Done":"Receipt Export Successfully"
+	300	: End Msg Box
+	
+[Function: FUnc ExpAllDebitVoucherTPO]
+	
+	005: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Exporting Debit Voucher "
+	
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "DebitVoucherExport.json"
+    
+	115: Export:ALL_Debit_Voucher_Report : Yes:Yes
+	200: Msg Box:"Done":"Debit Voucher Export Successfully"
+	300	: End Msg Box
+	
+[Function: FUnc ExpAllCreditVoucherTPO]
+	
+	005: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Exporting Credit Voucher "
+	
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "CreditVoucherExport.json"
+    
+	115: Export:ALL_Credit_Voucher_Report : Yes:Yes
+	200: Msg Box:"Done":"Credit Voucher Export Successfully"
+	300	: End Msg Box
+
+	
+[Line: TPO_CMPGUID]
+	
+	Field: Long Prompt	, TPO_CMPGUID
+	Local: Field: Long Prompt	: Set as: $$LocaleString:"GUID"
+	Local: Field: Long Prompt	: Width: 25 % Page	
+	
+[Field: TPO_CMPGUID]
+	
+	Use	: name Field
+	Set as	: $GUID:Company:##SVCurrentCompany
+	Set Always	: Yes
+	Read Only		: Yes
+	Border	: Thin Box
+	Background	: White	
+	Width		: 25 % Page	
+	
+
+[Line: TPO_IPAddress]
+	
+	Field	: Long Prompt, TPO_IPAddress
+	Local	: Field	: Long Prompt	: Set as	: $$LocaleString:"IP Address"
+	Local	: Field	: Long Prompt	: Width: 25 % Page
+[Field: TPO_IPAddress]
+	
+	Use		: Name Field
+	Storage	: TPO_IPAddress
+	Valid		: Not $$IsEmpty:$$Value
+	Case		: Lower Case
+	Width: 25 % Page
+	Background	: White
+	Border	: Thin Box
+[Line: TPO_TSPL FFE Enable Timer]
+	
+	Field: Long Prompt, TPO_TSPL FFE Enable Timer
+	Local: Field: Long Prompt	: Set as: $$LocaleString:"Enable Timer"
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+	
+[Field: TPO_TSPL FFE Enable Timer]
+	
+	Use			: Logical Field
+	Modifies	: TPO_TSPLFFEUCBEnbLe
+	Storage		: TPO_TSPLFFEEnbLe
+	Set Always	: Yes
+	Border		: Thin Box
+	Width		: 5 % Page
+	Background	: White
+[Line: TPO_TSPL FFE UCB SchedularTIme]
+	
+	Field: Long  Prompt, TPO_TSPL FFE UCB SchedularTIme
+	Local: Field: Long Prompt: Set as: $$LocaleString:"Schedule Time (Sec)"
+	
+	Local: Field: Default	: Inactive	:  $TPO_TSPLFFEEnbLe = "No"
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+	
+[Field: TPO_TSPL FFE UCB SchedularTIme]
+	
+	Use			: Number Field
+	Storage		: TPO_TSPLFFEUCBSchedularTIme
+	Modifies	: TPO_TSPL FFE UCB SchedularTIme
+	Set as		: ##TPO_TSPLFFEUCBSchedularTIme
+	 Background	: White
+	Format		: "NoComma"
+	Set Always	: Yes
+	Skip		:   $TPO_TSPLFFEEnbLe = "No"
+	Inactive	:  $TPO_TSPLFFEEnbLe = "No"
+	Border		: Thin Box
+	Width		: 5 % Page
+	
+[Line: TPO_TSPL FFE Enable UCB]
+
+	Field: Long Prompt, TPO_TSPL FFE Enable UCB
+	Local: Field: Long Prompt : Info 	: $$LocaleString:"Auto Sync On Company Load? "
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+
+[Field: TPO_TSPL FFE Enable UCB]
+
+	Use         : Logical Field
+	Modifies    : TPO_TSPL FFE EnableUCB	: Yes
+	Storage		: TPOEnbOnLoadCMP
+	Border		: Thin Box
+	Width		: 5 % Page
+	Background	: White
+[Line: TPO_TSPL FFE Enable UCBClose]
+
+	Field: Long Prompt, TPO_TSPL FFE Enable UCBClose
+	Local: Field: Long Prompt : Info 	: $$LocaleString:"Auto Sync On Company Quit? "
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+	
+[Field: TPO_TSPL FFE Enable UCBClose]
+
+	Use         : Logical Field
+	Modifies    : TPO_TSPL FFE BackupOn	: Yes
+	Storage		: TPOEnbOnQuitCMP	
+	Border		: Thin Box		
+	Width		: 5 % Page
+	Background	: White
+[Variable: TPO_TSPL FFE EnableUCB]
+
+	Type		: Logical
+	Persistent	: Yes
+
+[Variable: TPO_TSPL FFE DestinationPath]
+
+	Type		: String
+	Persistent	: Yes
+	
+[Variable: TPO_TSPLFFEUCBEnbLe]
+	
+	Type	: Logical
+	Persistent	: Yes
+	
+[Variable: TPO_TSPL FFE UCB SchedularTIme]
+	
+	Type		: Number
+	Persistent	: Yes
+
+
+	
+[Line: TPO_CMPSubscriptionDetail]
+	
+	Field	: Long Prompt, TPO_CMPSubscriptionDetail
+	Local: Field: Long Prompt	: Set as	: $$LocaleString:"TrackPayout Subscription ID :"
+	Local	: Field	: Long Prompt		: Color		: Blue
+	Local	: Field	: Long Prompt		: Width		: 25 % Page	
+	Local	: Field	: Default			: Inactive	: Not $TPO_CMPAddOn
+	
+[Field: TPO_CMPSubscriptionDetail]
+
+	Use			: Short Name Field
+	Storage		: TPO_CMPSubscriptionDetail
+	Width		: 5 % Page
+	Max			: 6
+	Border		: Thin Box
+	Background	: White
+	
+[Line: TPO_CMPDetail]
+	
+	Field	: Long Prompt, TPO_CMPDetail
+	
+	Local	: Field	: Long Prompt		: Set as	: $$LocaleString:"TrackPayout Company ID :"
+	Local	: Field	: Long Prompt		: Color		: Blue
+	Local	: Field	: Long Prompt		: Width		: 25 % Page	
+	Local	: Field	: Default			: Inactive	: Not $TPO_CMPAddOn
+	
+[Field: TPO_CMPDetail]
+	
+	Use	: Short Name Field
+	Storage	: TPO_CMPDetail
+	Width		: 5 % Page
+	Max		: 6
+	Border		: Thin Box
+	Valid	: Not $$IsEmpty:$$Value
+	Background	: White
+	
+[Line: TPO_SyncFromDate]
+	
+	Field: Long Prompt, TPO_SyncFromDate
+	
+	Local	: Field: Long Prompt	: Set as	: $$LocaleString:"Sync From Date :"
+	Local	: Field: Long Prompt	: Color	: Blue
+	Local	: Field	: Long prompt		: Width	: 25 % Page
+	
+[Field: TPO_SyncFromDate]
+	
+	Type		: Date
+	Storage: TPO_SyncFromDate
+	Set as	: if $$IsEmpty:$$Value then $BooksFrom:Company:$$CurrentCompany else $$Value
+	Set Always	: Yes
+	Border		: Thin Box
+	Width		: 6 % Page
+	Background	: White
+	Style		: Small Bold
+	
+[Line: TPO_CMPCMDetail]
+	
+	Field	: Long Prompt, TPO_Prev_CMPCMDetail, TPO_Curr_CMPCMDetail
+	
+	Local	: Field	: Long Prompt		: Set as	: $$LocaleString:"TrackPayout CM ID :"
+	Local	: Field	: Long Prompt		: Color		: Blue
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+	
+[Field: TPO_Prev_CMPCMDetail]
+	
+	Use	: Number Field
+	Storage	: TPO_Prev_CMPCMDetail
+	 
+	Background	: White
+	Set Always	: Yes
+	Type	: Number	: Forced
+	;Read Only: Yes
+	Border		: Thin Box
+	Width		: 5 % Page
+[Field: TPO_Curr_CMPCMDetail]
+	
+	Use	: Number Field
+	Storage	: TPO_Curr_CMPCMDetail
+	Width		: 5 % Page
+	 
+	Set as		: $ALTMSTID:Company:##SVCurrentCompany
+	Set Always	: Yes
+	Type	: Number	: Forced
+	Border		: Thin Box
+	Invisible	: Yes
+	Background	: White
+[Line: TPO_CMPTRDetail]
+	
+	
+	Field	: Long Prompt, TPO_Prev_CMPTRDetail,TPO_Curr_CMPTRDetail
+	
+	Local	: Field	: Long Prompt		: Set as	: $$LocaleString:"TrackPayout TR ID :"
+	Local	: Field	: Long Prompt		: Color		: Blue
+	Local	: Field	: Long Prompt		: Width		: 25 % Page
+	
+[Field: TPO_Prev_CMPTRDetail]
+	
+	Use	: Number Field
+	Storage	: TPO_Prev_CMPTRDetail
+	Width		: 5 % Page
+	 
+	Set Always	: Yes
+	;Read Only: Yes
+	Border		: Thin Box
+	Background	: White
+ 
+[Field: TPO_Curr_CMPTRDetail]
+	
+	Use	: Number Field
+	Storage	: TPO_Curr_CMPTRDetail
+	Width		: 5 % Page
+	 
+	Set as		: $ALTVCHID:Company:##SVCurrentCompany
+	Set Always	: Yes
+	Type	: Number	: Forced
+	Invisible	: Yes
+	Border		: Thin Box
+	Background	: White
+[System: Formula]
+	
+	IsTrackPayoutSync	: $TPO_CMPAddOn:Company:##SVCurrentCompany = "Yes"
+	IsTrackPayout_CMPID	: $TPO_CMPDetail:Company:##SVCurrentCompany
+	
+	AutoSyncOnLoadCMP	: $TPOEnbOnLoadCMP:Company:##SVCurrentCompany
+	AutoSyncOnQuitCMP	: $TPOEnbOnQuitCMP:Company:##SVCurrentCompany
+	
+	TPO_EnableTimer				: $TPO_TSPLFFEEnbLe:Company:##SVCurrentCompany
+	TPO_CMPSubscriptionDetail	: $TPO_CMPSubscriptionDetail:Company:##SvCurrentCompany
+	
+;
+;[#Line: MST Name]
+;	
+;	Add: Field	: TPO_MSTID
+;	
+;[Field: TPO_MSTID]
+;	
+;	Use	: Name Field
+;	Set as	: $AlterID

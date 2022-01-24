@@ -1,0 +1,32 @@
+[Include: ChangeInCompany.txt]
+[Include: UDF.txt]
+[Include: All_RecordSync.txt]
+[Include: All_SalesVoucher_RecordSync.txt]
+[Include: Al_receiptVoucher_RecordSync.txt]
+[Include: All_Debit_Voucher.txt]
+[Include: All_Credit_Voucher.txt]
+[Include: Last_Sync_Detail.txt]
+[Include: company_register.txt]
+
+
+
+
+
+;;;;starting on 30-12-2021- v 3.0 trackpayout ;;;;;;;
+
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_ledger_detail.txt]
+
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_sale_detail.txt]
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_receipt_detail.txt]
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_credit_note_detail.txt]
+
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_purchase_detail.txt]
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_payment_detail.txt]
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_debit_note_detail.txt]
+
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_journal_detail.txt]
+
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_deleted_detail.txt]
+[Include: D:\TDL\TrackPayout\V3.0\v3.0\tally_company_detail.txt]
+
+	

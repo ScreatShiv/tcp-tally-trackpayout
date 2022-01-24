@@ -1,0 +1,159 @@
+
+;[#Menu: Gateway of Tally]
+;	
+;	Add: Item: Tally Deleted Detail	: Alter : TPO_Deleted_Master_voucher_Report
+;	
+;[Report: TPO_Deleted_Master_voucher_Report]
+;	
+;	Form	: TPO_Deleted_Master_voucher_form
+;	Object	: Company
+;	
+;[Form: TPO_Deleted_Master_voucher_form]
+;	
+;	Part	: TPO_Deleted_Master_voucher_detail
+;	
+;	Height	: 100 % Page
+;	Width	: 100 % Page
+;	
+;[Part: TPO_Deleted_Master_voucher_detail]
+;	
+;	Line	: TPO_Deleted_Master_voucher_detail
+;	Repeat	: TPO_Deleted_Master_voucher_detail: Aggr_TPO_Deleted_Master_voucher
+;	Scroll	: Vertical
+;	Break On	: $$IsEmpty:$TPO_DMV_GUID
+;	
+;[Line: TPO_Deleted_Master_voucher_detail]
+;	
+;	Field	: TPO_DMV_SNO, TPO_DMV_GUID, TPO_DMV_Created_at
+;	
+;[Field: TPO_DMV_SNO]
+;	
+;	Set as	: $$Line
+;	Width	: 5 % Page
+;	Skip	: Yes
+;[Field: TPO_DMV_GUID]
+;	
+;	Use	: Name Field
+;	Storage	: TPO_DMV_GUID
+;	Set Always	: Yes
+;	Width	: 15 % Page
+;	
+;[Field: TPO_DMV_Created_at]
+;	
+;	Use	: Name Field
+;	Storage	: TPO_DMV_Created_at
+;	Set Always	: Yes
+;	Width	: 15 % Page
+;	
+;[#Form: Ledger]
+	
+[System: Events]
+	
+	TPO_Deleted	: Before Delete Object	: Yes	: Call: Func_Update_deleted_record:$MASTERID:$GUID
+	
+	;;IsTrackPayout_CMPID
+[Collection: CollGUID_Current]
+	
+	Data Source: Report: Current
+	Fetch	: MasterID,AlterID
+
+[Collection: CollGUID_Selected]
+	
+	Data Source: Report: Selected
+	Fetch	: MasterID,AlterID
+	
+[Collection: CollGUID_src]
+	
+	Source Collection: CollGUID_Selected;, CollGUID_Unselected, CollGUID_Selected
+	Fetch	: ?
+	Compute	: D		: $MasterID
+	
+[Variable: TPO_Count]
+	
+	Type	: Number
+
+[Variable: Total_TPO_Count]
+	
+	Type	: Number
+	
+[Variable: TPO_Master_ID]
+	
+	Type	: String
+	
+
+[System: Variable]
+	
+	Total_TPO_Count : $$NumItems:CollGUID_src
+	TPO_Count : 1
+	TPO_Master_ID: ""
+	
+[Function: Func_Update_deleted_record]
+	
+ 	Parameter	: pMasterID	: String
+	Parameter	: pGuid	: String
+ 	 
+	Variable	: TPO_Master_ID
+;	000: Set :TPO_Master_ID: ##pGUID
+;	010: Log: ##TPO_Master_ID
+;	
+;	001: If: ($$NumItems:CollGUID_Selected) > 0 
+; 	010: Walk Collection: CollGUID_Selected
+;	015	: Log		: "Status : "+ "Please Wait....." +"\n"+ "Deleted Voucher ID is Updating"
+;	017	: Walk Collection	: POSTDataOfDeleteMaster
+;	018	: End Walk
+;	019	: Log		: "Deleted Transaction ID Updated Successfully..!!"
+;	030: End Walk
+;	040: End If
+;	
+;;	2000: End Walk
+; 
+	105	: Log		: "Status : "+ "Please Wait....." +"\n"+ "Deleted Voucher ID is Updating"
+	110	: Walk Collection	: POSTDataOfDeleteMaster
+	120	: End Walk
+	130	: Log		: "Deleted Transaction ID Updated Successfully..!!"
+	
+[Collection: POSTDataOfDeleteMaster]
+		
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcpV2/masters/delete_ledger/?company_id=" + @@IsTrackPayout_CMPID  + "&master_id=" + ##pMasterID + "&guid=" + ##pGuid: UTF8
+	JSON Object Path	: "status:1"
+	
+;	;010: Set Target	: (Company, ##SVCurrentCompany).
+;	020: Set Object	: (Company, ##SVCurrentCompany).
+;	030: Set: vCount 	: ##vCount + 1
+;	025: Log: "asd"  + $$String:##vCount
+;	100: If: ##vCount = 1
+;	122: Set Target	: Aggr_TPO_Deleted_Master_voucher[##vCount]
+;	122a: Else
+;	122f: Set Target	: Aggr_TPO_Deleted_Master_voucher
+;	122g: End If
+;	123: Log	: ##pGuid
+;	125: Set Value: TPO_DMV_GUID	: $$String:##pGuid
+;;	130: Set Value: TPO_DMV_Created_at		: $$String:$$CurrentDate
+;	140: Set Target:..
+;	
+;	145: Accept Alter
+;	;;200: End Walk
+;	520: Save Target
+	
+;	
+;[#Field: Vch ref]
+;	
+;	Add: Set as: $$NUmitems:Collection_Aggr_TPO_Deleted_Master_voucher
+;	
+;[Collection: Collection_Aggr_TPO_Deleted_Master_voucher]
+;	
+;	Type	: Aggr_TPO_Deleted_Master_voucher: Company
+;	Child Of	: $$CurrentCompany
+;	
+;	Fetch	: ?,TPO_DMV_GUID
+;	
+;	Format	: $TPO_DMV_GUID
+; 
+;	
+	
+	
+	
+	

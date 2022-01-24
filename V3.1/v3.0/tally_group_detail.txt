@@ -1,0 +1,152 @@
+
+[#Menu: Gateway of Tally]
+	
+;	Add: Item: Tally Group Detail	: Display: TPO_Group_Report
+	
+[Report: TPO_Group_Report]
+	
+	Form	: TPO_Group_Form
+	
+	Set		: SVFromDate	: $$Date:$StartingFrom:Company:$$CurrentCompany
+	Set		: SVToDate		: $$Date:$LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+[Form: TPO_Group_Form]
+	
+	Part	: TPO_Group_ColDetail
+	Height	: 100 % Page
+	Width	: 100 % Page
+
+[Part: TPO_Group_ColDetail]
+	
+	Line	: TPO_Group_ColDetail
+	Repeat	: TPO_Group_ColDetail	: TPO_Group_Collection_Src
+	Scroll	: Vertical
+	
+[Collection: TPO_Group_Collection_Src]
+	
+	Type		: Group
+	Parm Var	: SVFromDate	: Date: $StartingFrom:Company:$$CurrentCompany
+	Parm Var	: SVToDate		: Date: $LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+	Fetch		: Address.*, OpeningBalance, closingBalance, Name, parent, isdeemedpositive, $PrimaryGroup
+	Fetch		: AlterId,MasterID
+
+[System: Formula]
+	
+	ISNMae		: $Name = "D"
+	
+[Line: TPO_Group_ColDetail]
+	
+	Field: TPO_group_subscription_id, TPO_group_company_id, TPO_group_guid,TPO_group_master_id,TPO_group_alter_ids, TPO_group_name, TPO_group_parent
+	Field: TPO_group_opening_balance_date, TPO_group_opening_balance, TPO_group_op_bal_is_deemed_positive
+	Field: TPO_group_debit_balance, TPO_group_credit_balance 
+	Field: TPO_group_closing_balance_date, TPO_group_closing_balance, TPO_group_cl_bal_is_deemed_positive
+	Field: TPO_group_is_deemed_positive, TPO_group_is_reserved
+	JSONTag	: "Group"
+
+[Field: TPO_group_subscription_id]
+	
+	Type	: String
+	Set as	: @@TPO_CMPSubscriptionDetail
+	JSONTag	: "subscription_id"
+	
+[Field: TPO_group_company_id]
+	
+	Type	: String
+	Set as	: @@IsTrackPayout_CMPID
+	JSONTag	: "company_id"
+	
+[Field: TPO_group_master_id]
+	Type	: String
+	Set as	: $MasterID
+	JSONTag	: "master_id"
+	
+[Field: TPO_group_alter_ids]
+	
+	Type	: String
+	Set as	: $AlterID
+	JSONTag	: "alter_id"
+	
+[Field: TPO_group_guid]
+	
+	Type	: String
+	Set as	: $guid
+	JSONTag	: "group_guid"
+	
+[Field: TPO_group_name]
+	
+	Type	: String
+	Set as	: $Name
+	JSONTag	: "group_name"
+	
+[Field: TPO_group_parent]
+	
+	Type	: String
+	;Set as	: $Parent
+	Set as	: $Parent
+	JSONTag	: "group_parent"
+	
+[Field: TPO_group_opening_balance_date]
+	
+	Type	: String
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($TPO_SyncFromDate:Company:$$CurrentCompany)
+	JSONTag	: "group_opening_balance_date"
+	
+[Field: TPO_group_opening_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$openingbalance then "0.00" else $$TPO_RemoveCharactersFromString:$openingbalance:","
+	JSONTag	: "group_opening_balance"
+	
+[Field: TPO_group_op_bal_is_deemed_positive]
+
+	Type	: String
+	Set as	: if $$IsDr:$OpeningBalance then "Yes" else "No"
+	JSONTag	: "group_op_bal_is_deemed_positive"
+	
+[Field: TPO_group_debit_balance]
+		
+	Type	: String
+	Set as	: if $$IsEmpty:$DebitTotals then "0.00" else $$TPO_RemoveCharactersFromString:$DebitTotals:","
+	JSONTag	: "group_debit_balance"
+	
+[Field: TPO_group_credit_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$CreditTotals then "0.00" else $$TPO_RemoveCharactersFromString:$CreditTotals:","
+	JSONTag	: "group_credit_balance"
+	
+	
+[Field: TPO_group_closing_balance_date]
+	
+	Type	: String
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($LASTVOUCHERDATE:Company:$$CurrentCompany)
+	JSONTag	: "group_closing_balance_date"
+	
+[Field: TPO_group_closing_balance]
+	
+	Type	: String
+	Set as	: if $$IsEmpty:$closingBalance then "0.00" else $$TPO_RemoveCharactersFromString:$closingBalance:"," 
+	JSONTag	: "group_closing_balance"
+	
+[Field: TPO_group_cl_bal_is_deemed_positive]
+
+	Type	: String
+;	Set as	: if $$IsDr:$ClosingBalance = "Yes" then "Yes" else "No"
+	Set as	: if $$IsDr:$ClosingBalance = "Yes" then "Yes" else "No"
+	JSONTag	: "group_cl_bal_is_deemed_positive"
+ 
+[Field:TPO_group_is_deemed_positive]
+	
+	Type	: String	
+	Set as	: $IsDeemedPositive
+	JSONTag	: "group_is_deemed_positive"	
+	
+[Field: TPO_group_is_reserved]
+	
+	Type	: String
+	Set as	: $IsReserved
+	JSONTag	: "group_is_reserved"
+
+
+

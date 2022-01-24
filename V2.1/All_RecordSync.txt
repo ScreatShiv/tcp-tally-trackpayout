@@ -1,0 +1,726 @@
+	
+;[#Menu: Gateway of tally]
+;	
+;	Add: Item: Before: @@LocQuit: Test	: Display: Ledger
+
+[System: Events]
+	
+
+	TPO_TSPL Smp Backup	Timer		: Timer			: @@IsTrackPayoutSync And @@TPO_EnableTimer	And Not ($$IsEmpty:@@IsTrackPayout_CMPID): CALL	: Func_Sync_All_Data_To_TrackPayout	
+	
+	TPO_TSPL On Start Compnay		: Load Company	: @@IsTrackPayoutSync And @@TPO_EnableTimer And Not ($$IsEmpty:@@IsTrackPayout_CMPID)	: Start Timer	: TPO_TSPL Smp Backup Timer : ($TPO_TSPLFFEUCBSchedularTIme:Company:##SVCurrentCompany);(##TSPLFFEUCBSchedularTIme);FuncCreateDayBookXML;Export: DayBook
+
+	TPO_TSPL On End Compnay			: Close Company	: @@IsTrackPayoutSync And @@TPO_EnableTimer	And Not ($$IsEmpty:@@IsTrackPayout_CMPID)	: Stop  Timer	: TPO_TSPL Smp Backup Timer 
+
+	Sync_All_the_Current_Data Load Company	: Load Company	: @@IsTrackPayoutSync And @@AutoSyncOnLoadCMP And Not ($$IsEmpty:@@IsTrackPayout_CMPID)	: Call	: Func_Sync_All_Data_To_TrackPayout
+	
+	Sync_All_the_Current_Data Quit Company	: Close Company	: @@IsTrackPayoutSync And @@AutoSyncOnQuitCMP And Not ($$IsEmpty:@@IsTrackPayout_CMPID)	: Call	: Func_Sync_All_Data_To_TrackPayout
+		
+[Function: Func_Sync_All_Data_To_TrackPayout]
+	
+	10	: Msg Box	: "Hello"		: "TrackPayout"
+	05	: Start Msg Box		: "Status": "Please Wait... "+"\n"+" Data is Exchanging With TrackPayout...."
+	20	: Call		: Func_Sync_All_Ledger
+	22	: If		: @@LedgerPostStatus = 200
+	;23	: Display	: Test1
+	24	: Call		: Func_Sync_All_SalesVoucher
+	45	: Call		: Func_Sync_All_ReceiptVoucher
+	46	: Call		: Func_Sync_All_DebitVoucher_Debtors
+	48	: Call		: Func_Sync_All_CreditVoucher_Debtors
+	
+		;45f	: Display	: Test2	
+		;45h	: Display	: Test3	
+	50: End Msg Box
+	
+		450a	: If: @@SalesPostStatus = 200 and @@ReceiptPostStatus = 200 and @@DebitVoucherPostStatus = 200 and @@CreditVoucherPostStatus = 200
+		450d	: Call	:  Func UpdateID
+		;450e	: Call	: FuncRegistertallyCompany
+ 		450f	: Call	: Func UpdateLastSyncDateTime
+		
+		450y	: Else
+		450z	: Msg Box	: "Status" : "Error Code" + $$NewLine + "Sale Failed : " + @@SalesPostStatus + $$NewLine + "Receipt Failed : " + @@ReceiptPostStatus
+		450m	: End If
+	
+	
+	450o	: Else
+	450p	: Msg Box	: "Status" : "Error Code" + $$NewLine +   @@LedgerPostStatus
+	500		: End If	
+	
+	
+	
+
+[Function: Func UpdateID]
+	
+	001: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Updating TrackPayout ID "
+	002: Modify Object 	: (Company,##SVCurrentCompany).TPO_Prev_CMPCMDetail.TPO_Prev_CMPCMDetail: $AltMSTID:Company:##SVCurrentCompany, TPO_Prev_CMPTRDetail.TPO_Prev_CMPTRDetail:$ALTVCHID:Company:##SVCurrentCompany
+	005: Return			: True
+	010: End Msg Box
+;	
+[Function: Func UpdateLastSyncDateTime]
+	
+	001: start msg box		: "Status": "please wait....." +"\n"+ "updating last sync detail"
+	005: walk collection	: collectionoflastsyncdatetime
+	008: end walk		
+	010: end msg box
+	
+	050: Msg  Box: "Status": @@lastSyncStatus
+	
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "LastSync.json"
+    
+	115: Export:TPO_Last_Sync_Rep : Yes:Yes
+	
+
+	
+[Collection: CollectionofLastSyncDateTime]
+		
+
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/company/set_last_details" : UTF8
+	
+	Remote Request	 	: TPO_Last_Sync_Rep  : UTF8
+	JSON Object Path	: "status:1"
+	Fetch	: *.*
+	
+[Collection: CollectionofRegisterCOmpany]
+	
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/company/register_company" : UTF8
+	
+	Remote Request 		: TPO_company_register_rep  : UTF8
+	JSON Object Path	: "status:1"
+	Fetch	: *.*
+	
+[Function: FuncRegistertallyCompany]
+	
+	001: Start Msg Box		: "Status": "Please Wait....." +"\n"+ "Register Detail"
+	005: Walk Collection	: CollectionofRegisterCOmpany
+	008: End Walk		
+	010: End Msg Box
+	
+	050: Msg  Box:"Status":@@Registerstatus
+
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "register_detail.json"
+    
+	115: Export: TPO_company_register_rep	: Yes: Yes
+	
+
+
+[System: Formula]
+	
+	LedgerPostStatus		: $$CollectionField:$Status:1:POSTDataOfLedger
+	SalesPostStatus			: $$CollectionField:$Status:1:POSTDataOfSalesVoucher
+	ReceiptPostStatus		: $$CollectionField:$Status:1:POSTDataOfReceiptVoucher
+	DebitVoucherPostStatus	: $$CollectionField:$Status:1:POSTDataOfDebitVoucher
+	CreditVoucherPostStatus	: $$CollectionField:$Status:1:POSTDataOfCreditVoucher
+;	SettlementStatus	: $$CollectionField:$Status:1:POSTDataOfSettlementVoucher
+	RegisterStatus		: $$CollectionField:$status:1:CollectionofRegisterCOmpany
+	;RegisterMessage		: $$CollectionField:$message:1:CollectionofRegisterCOmpany
+	lastSyncStatus		: $$CollectionField:$status:1:CollectionofLastSyncDateTime
+	
+[Function: Func_Sync_All_Ledger]
+
+;	05	: Start Msg Box		: "Status": "Please Wait Ledger "+"\n"+" Data is Exchange With TrackPayout...."
+	10	: Walk Collection	: POSTDataOfLedger
+	20	: End Walk
+;	30	: End Msg Box
+	
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "LedgerExport.json"
+    
+	115: Export:TPO_ALL_Ledger_Rep : Yes:Yes
+	
+[Function: Func_Sync_All_SalesVoucher]
+
+;	05	: Start Msg Box		: "Status": "Please Wait Sales Voucher "+"\n"+" Data is Exchange With TrackPayout...."
+	10	: Walk Collection	: POSTDataOfSalesVoucher
+	20	: End Walk
+;	30	: End Msg Box
+
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "SaleExport.json"
+    
+	115: Export:TPO_ALL_SalesVoucher_Rep : Yes:Yes
+	
+
+[Function: Func_Sync_All_DebitVoucher_Debtors]
+	
+;	05	: Start Msg Box		: "Status": "Please Wait Debit Voucher "+"\n"+" Data is Exchange With TrackPayout...."
+	10	: Walk Collection	: POSTDataOfDebitVoucher
+	20	: End Walk
+;	30	: End Msg Box
+
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "DebitVoucherExport.json"
+    
+	115: Export:ALL_Debit_Voucher_Report : Yes:Yes
+	
+
+[Function: Func_Sync_All_CreditVoucher_Debtors]
+	
+;	05	: Start Msg Box		: "Status": "Please Wait Credit Voucher "+"\n"+" Data is Exchange With TrackPayout...."
+	10	: Walk Collection	: POSTDataOfDebitVoucher
+	20	: End Walk
+;	30	: End Msg Box
+
+	100: Set: SVExportFormat 		: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  	: $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 		: @@TSPLFFEDestPath + "CreditVoucherExport.json"
+    
+	115: Export:ALL_Credit_Voucher_Report : Yes:Yes
+	
+	
+ 
+	
+	[System: Formula]	;; Formulae constructing Folder and Sub Folder Path for Backup File
+
+	TSPL FFE DestPath		: "." + "\log\" + @@IsTrackPayout_CMPID + "\"  + @@TSPLFFEDateForm + "\" + @@TSPLFFETimeForm + "\" 
+;	TSPL FFE CoNumber		: $$String:($CompanyNumber:Company:##SVCurrentCompany):5
+	TSPL FFE DateForm		: $$String:@@TSPLFFESysDate
+	TSPL FFE TimeForm		: @@TSPLFFEHrsForm + @@TSPLFFEMtsForm
+
+	TSPL FFE HrsForm		: If $$StringPart:@@TSPLFFESysTime:0:2 CONTAINS ":" +
+								Then $$StringPart:@@TSPLFFESysTime:0:1 +
+								Else $$StringPart:@@TSPLFFESysTime:0:2
+
+	TSPL FFE MtsForm		: If $$StringPart:@@TSPLFFESysTime:0:2 CONTAINS ":" +
+								Then $$StringPart:@@TSPLFFESysTime:2:2 +
+								Else $$StringPart:@@TSPLFFESysTime:3:2
+
+	TSPL FFE SysDate		: $$SysInfo:SystemDate
+	TSPL FFE SysTime		: $$SysInfo:SystemTime
+
+;	TSPL FFE NonZeroCompany	: $CompanyNumber != "0"
+
+	
+[Function: Func_Sync_All_ReceiptVoucher]
+	
+;	05	: Start Msg Box		: "Status": "Please Wait Receipt Voucher "+"\n"+" Data is Exchange With TrackPayout...."
+	10	: Walk Collection	: POSTDataOfReceiptVoucher
+	20	: End Walk
+;	30	: End Msg Box
+	
+	100: Set: SVExportFormat 	: $$SysName:Utf8JSON
+	105: Set: SVExportLanguage  : $$SysName:Utf8JSON 
+	106: SET: SVOpenFileAfterExport	: No
+	110: Set: SVPrintFileName 	: @@TSPLFFEDestPath + "ReceiptExport.json"
+    
+	115: Export:TPO_ALL_ReceiptVoucher_Rep : Yes:Yes
+;	
+;[Function: Func_Selttement]
+;	
+;	05	: Start Msg Box		: "Status": "Please Wait Still "+"\n"+" Data is Exchange With TrackPayout...."
+;	10	: Walk Collection	: POSTDataOfSettlementVoucher
+;	20	: End Walk
+;	30	: End Msg Box
+;	
+	
+[System: Formula]
+	
+	IPAddressTrackPayout: $TPO_IPAddress:Company:##SVCurrentCompany
+ 
+ 
+[Collection: POSTDataOfSalesVoucher]
+		
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/invoice/store" : UTF8
+	Remote Request : TPO_ALL_SalesVoucher_Rep  : UTF8
+	JSON Object Path	: "status:1"
+	
+
+[Collection: POSTDataOfDebitVoucher]
+		
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/alldebitvoucher/store" : UTF8
+	Remote Request : ALL_Debit_Voucher_Report  : UTF8
+	JSON Object Path	: "status:1"
+	
+[Collection: POSTDataOfCreditVoucher]
+		
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/allcreditvoucher/store" : UTF8
+	Remote Request : ALL_Credit_Voucher_Report  : UTF8
+	JSON Object Path	: "status:1"
+	
+	
+
+
+[Report: Test2]
+	
+	Form: Test2
+	
+[Form: Test2]
+	
+	Part: Form Subtitle, Test2
+	Width	: 30 % Page
+	Height	: 20 % Page
+	Local	: Field: Form Subtitle		: Info: $$LocaleString:"Sales Status"
+	
+[Part: Test2]
+		
+	Line: Test2	
+	Repeat	: Test2: POSTDataOfSalesVoucher
+	Scroll	: Vertical
+	
+[Line: Test2]
+	
+	Field	: Test2
+	Space Top		: 1
+	Space Bottom	: 1
+
+[Field: Test2]
+		
+	Use			: Name FIeld
+	Background	: yellow
+	Set as		 : if $status != "200" then @TPOSetas2 else @TPOSetas1
+	TPOSetas1		: "Sales Voucher Posted Successfully : " +  $$String:$status +   $$NewLine + "(Press 'Esc' Button to Continue)"
+	TPOSetas2		: "Sales Voucher Posted Failed : " +  $$String:$status +   $$NewLine + "(Press 'Esc' Button to Continue)"
+	Line		: 2
+	Width		: 50 % Page
+	
+ 
+[Collection: POSTDataOfLedger]
+	
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/customer/store" : UTF8
+	Remote Request : TPO_ALL_Ledger_Rep  : UTF8
+	JSON Object Path	: "status:1"
+	
+[Report: Test1]
+	
+	Form: Test1
+	
+[Form: test1]
+	
+	Part: Form Subtitle, test1
+	Width	: 30 % Page
+	Height	: 20 % Page
+	
+	
+	Local	: Field: Form Subtitle		: Info: $$LocaleString:"Ledger Status"
+[Part: test1]
+		
+	Line: Part1	
+	Repeat	: Part1: POSTDataOfLedger
+	Scroll	: Vertical
+	
+[Line: Part1]
+	
+	Field	: Part1
+	Space Top		: 1
+	Space Bottom	: 1
+	
+[Field: Part1]
+		
+	Use	: Name FIeld
+	Background	: yellow
+	Set as	:"Customer Date Posted Successfully : " +  $$String:$Status  +  $$NewLine + "(Press 'Esc' Button to Continue)"
+	Width	: 50 % Page
+	Line		: 2
+
+[Collection: POSTDataOfReceiptVoucher]
+	
+	Export Header	: "Accept:application/json"
+	Export Header	: "Accept-Charset:utf-8"
+	
+	Data Source: HTTP JSON :  @@IPAddressTrackPayout +"/api/tallytcp/utility/invoice/credit_notes" : UTF8
+	Remote Request : TPO_ALL_ReceiptVoucher_Rep  : UTF8
+	JSON Object Path	: "status:1"
+	
+;[Collection: POSTDataOfSettlementVoucher]
+;	
+;	Data Source: HTTP JSON :  "http://localhost:8001/api/payment-updation/settlepayment" : UTF8
+;
+
+
+	
+
+[Report: Test3]
+	
+	Form: Test3
+	
+[Form: Test3]
+	
+	Part:Form Subtitle, Test3
+	Width	: 30 % Page
+	Height	: 20 % Page
+	
+	Local	: Field: Form Subtitle		: Info: $$LocaleString:"Receipt Status"
+	
+[Part: Test3]
+		
+	Line: Test3
+	Repeat	: Test3: POSTDataOfReceiptVoucher
+	Scroll	: Vertical
+	
+[Line: Test3]
+	
+	Field	: Test3
+	Space Top		: 1
+	Space Bottom	: 1
+	
+[Field: Test3]
+		
+	Use			: Name FIeld
+	Background	: Yellow
+	Set as		 : if $status != "200" then @TPOSetas2 else @TPOSetas1
+	TPOSetas1		: "Receipt Voucher Posted Successfully : " +  $$String:$status +  $$NewLine + "(Press 'Esc' Button to Continue)"
+	TPOSetas2		: "Receipt Voucher Posted Failed : " +  $$String:$status +  $$NewLine + "(Press 'Esc' Button to Continue)"
+	Width		: 50 % Page
+	Line		: 2
+
+[Report: TPO_ALL_Ledger_Rep]
+	
+	Form		: TPO_ALL_Ledger_Form
+	Plain JSON	: No
+	
+[Form: TPO_ALL_Ledger_Form]
+	
+	Part	: TPO_ALL_Ledger_Part
+	
+	
+[Part: TPO_ALL_Ledger_Part]
+	
+	Line	: TPO_ALL_Ledger_Line
+	Repeat	: TPO_ALL_Ledger_Line	: CollectionOfAllLedgerSrc
+	Scroll	: Vertical
+	JSONTag	: "Transaction"
+	
+;[#Field: Vch ref]
+;	
+;	Add	: Table: CollectionOfAllLedgerSrc
+;	Show Table : Always
+	
+[Collection: CollectionfoAllDebtorSrc]
+	
+	Parm Var	: SVFromDate: Date: $TPO_SyncFromDate:Company:$$CurrentCompany
+	Parm Var	: SVToDate: Date: $LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+	Type		: Ledger
+	Child Of	: $$GroupSundryDebtors
+	Belongs To	: Yes
+	
+	Compute		: XParent_type	: "DEBTORS"
+	
+	Fetch		: Name, Parent, OpeningBalance, ClosingBalance, Address.*,MasterID,AlterID
+	Fetch		: EMail,EMailCC,LedgerMobile,CountryofResidence,LedStateName,BillCreditPeriod
+	Fetch		: GSTRegistrationType, PartyGSTIN, LedgerContact,MasterID,AlterId
+	
+	Compute		: XGUID					: $$Owner:$GUID
+	Compute		: XOpeningBalance		:  $$FromValue:##SVFromDate:$$ToValue:##SVToDate:$openingBalance
+	Compute		: XClosingBalance		:  $$FromValue:##SVFromDate:$$ToValue:##SVToDate:$closingBalance
+	Compute		: XXParent_type			:  $XParent_type
+	
+	Filter		: IsTPOFilterLedger
+	
+[Collection: CollectionofAllCreditorSrc]
+	
+Parm Var	: SVFromDate: Date: $TPO_SyncFromDate:Company:$$CurrentCompany
+	Parm Var	: SVToDate: Date: $LASTVOUCHERDATE:Company:$$CurrentCompany
+	
+	Type		: Ledger
+	Child Of	: $$GroupSundryCreditors
+	Belongs To	: Yes
+	
+	Compute		: XParent_type	: "CREDITORS"
+	
+	Fetch		: Name, Parent, OpeningBalance, ClosingBalance, Address.*,MasterID,AlterID
+	Fetch		: EMail,EMailCC,LedgerMobile,CountryofResidence,LedStateName,BillCreditPeriod
+	Fetch		: GSTRegistrationType, PartyGSTIN, LedgerContact,MasterID,AlterId
+	
+	Compute		: XGUID					: $$Owner:$GUID
+	Compute		: XOpeningBalance		:  $$FromValue:##SVFromDate:$$ToValue:##SVToDate:$openingBalance
+	Compute		: XClosingBalance		:  $$FromValue:##SVFromDate:$$ToValue:##SVToDate:$closingBalance
+	Compute		: XXParent_type			:  $XParent_type
+	Filter		: IsTPOFilterLedger
+	
+[Collection: CollectionOfAllLedgerSrc]
+ 
+ 	Collection: CollectionfoAllDebtorSrc, CollectionofAllCreditorSrc
+ 
+	
+[System: Formula]
+	
+	IsTPOFilterLedger	: $AlterId > $$Number:$TPO_Prev_CMPCMDetail:company:$$CurrentCompany ;AND  $$Number:$TPO_Curr_CMPCMDetail:company:$$CurrentCompany
+	
+[Line: TPO_ALL_Ledger_Line]
+
+	Field 	: TPO LedID, TPO LedGUID, TPO LedName, TPO LedEMail,
+	Field	: TPO LedContactNo, TPO LedCountry, TPO LedState, TPO LedCity
+	Field	: TPO LedCreditDay, TPO LedGSTNo, TPO LedContactPerson, TPO ContactPersonEmail
+	Field	: TPO LedOpeningDate, TPO LedOpeningBalance
+	Field	: TPO LedClosingDate, TPO LedClosingBalance, TPO LEDParent_type
+	JSONTag	: "Ledger"
+	
+	Add: Option	: TPO_SubscriptionId	: Not $$IsEmpty:@@TPO_CMPSubscriptionDetail
+	Explode	: Ledger_Bill_Allocation: Yes
+	
+
+[!Part: Ledger_Bill_Allocation]
+	
+	Line: Ledger_Bill_Allocation
+	Repeat: Ledger_Bill_Allocation	: BillAllocations
+	Scroll	: Vertical
+	
+[Line: Ledger_Bill_Allocation]
+	
+	Field: TPO LedBillDt, TPO LedBillNo, TPO LedBillDueDt, TPO LedBillAmt, TPO LedDrOrCrBillAmt
+	
+	JSONTag	: "Ledger_Bill"
+	
+[Field: TPO LedBillDt]
+	
+	Use	: Name Field
+	Set as	: $$String:$BillDate
+	JSONTag: "invoice_date"
+[Field: TPO LedBillNo]
+	
+	Use	: Name Field
+	Set as	: $Name
+	JSONTag: "invoice_no"
+	
+[Field: TPO LedBillDueDt]
+
+	Use	: Name Field
+	Set as	: if $$IsEmpty:$BillCreditPeriod then $BillDate + $$Number:30 else (if $$String:$BillCreditPeriod contains 'Days' then $BillDate + $$Number:$BillCreditPeriod else $$Date:($$String:($BillCreditPeriod):'Short Date'))
+	JSONTag	: "payment_due_date"
+	
+[Field: TPO LedBillAmt]
+	
+	Use		: Name Field
+	Set as	: if $$IsDr:$OpeningBalance then $$TPO_RemoveCharactersFromString:$OpeningBalance:"-" else $$Number:$OpeningBalance
+	JSONTag	: "invoice_amount"
+	
+[Field: TPO LedDrOrCrBillAmt]
+	
+	Use		: Name Field
+	Set as	: $IsDeemedPositive
+	JSONTag	: "bill_deemedpositive"
+	
+[!Line: TPO_SubscriptionId]
+	
+	Add: Field: Before: TPO LedID	: TPO LedSubscriptionId
+	
+[Field: TPO LedSubscriptionId]
+	
+	Use		: Name Field
+	Set as	: @@TPO_CMPSubscriptionDetail
+	JSONTag	: "subscription_id"
+	
+[Field: TPO LedID]
+	
+	Use		: Name Field
+	Set as	: @@IsTrackPayout_CMPID
+	JSONTag	: "company_id"
+	
+[Field: TPO LedGUID]
+
+	Use		: Name Field
+	Set as	: $GUID
+	JSONTag	: "guid"
+	
+[Field: TPO LedName]
+
+	Use		: Name Field
+	Set as	: $$String:$Name
+	JSONTag	: "customer_name"
+	
+[Field: TPO LedEMail]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$EMail then "NA" else $$String:$EMail
+	JSONTag	: "customer_email"
+	
+[Field: TPO LedContactNo]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$LedgerMobile then "NA" else $$String:$LedgerMobile
+	JSONTag	: "customer_contact"
+	
+[Field: TPO LedCountry]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$CountryofResidence then "NA" else	$$String:$CountryofResidence
+	JSONTag	: "customer_country"
+	
+[Field: TPO LedState]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$LedStateName then "NA" else $$String:$LedStateName
+	JSONTag	: "customer_state"
+	
+[Field: TPO LedCity]
+
+	Use		: Name Field
+	Set as	: "NA"
+	JSONTag	: "customer_city"
+	
+[Field: TPO LedCreditDay]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$BillCreditPeriod then "NA" else $$Number:$BillCreditPeriod
+	JSONTag	: "payment_term"
+	
+[Field: TPO LedGSTNo]
+
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$PartyGSTIN then "NA" else $PartyGSTIN
+	JSONTag	: "gst_no"
+	
+[Field: TPO LedContactPerson]
+	
+	Use		: Name Field
+	Set as	: if $$IsEmpty:$LedgerContact then "NA" else $LedgerContact
+	JSONTag	: "contact_person_name"
+	
+[Field: TPO ContactPersonEmail]
+	
+	Use		: Name Field
+	Set as	: "NA"
+	JSONTag	: "contact_person_email"
+ 
+		
+[Field: TPO LedOpeningDate]
+
+	Use	: Name  Field
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($TPO_SyncFromDate:Company:$$CurrentCompany)
+	JSONTag	: "openingbalance_date"	
+	
+[Field: TPO LedOpeningBalance]
+	
+	Use		: Name Field
+	Set as	: if $$IsDr:$XOpeningBalance then  $$String:"-" +   $$String:@ConvertInNumber else  $$String:@ConvertInNumber 
+	JSONTag	: "opening_balance"
+	ConvertInNumber:$$Number:$XOpeningBalance
+	
+[Field: TPO LedClosingDate]
+
+	Use	: Name  Field
+	Set as	: $$TPO_DateMMYYYYFormat:$$Date:($LASTVOUCHERDATE:Company:$$CurrentCompany)
+	JSONTag	: "closingbalance_date"	
+	
+[Field: TPO LedClosingBalance]
+	
+	Use		: Name Field
+	Set as	: if $$IsDr:$XClosingBalance then  $$String:"-" +   $$String:@ConvertInNumber else  $$String:@ConvertInNumber
+	ConvertInNumber:$$Number:$XClosingBalance
+	JSONTag	: "closing_balance"
+	
+[Field: TPO LEDParent_type]
+	
+	Use	: Name Field
+	Set as	: $XXParent_type 
+	JSONTag	: "parent_type"
+
+	
+
+	
+
+
+;	
+;
+;	;Explode : TSPLVchInvJSonExp
+;
+;	JSON Tag : "Vch"
+;
+; 
+;[Field: TSPLVchGUID]
+;	
+;	Use	: Name Field
+;	Set as	: $GUID
+;	JSON Tag	: "GUID"
+;	
+;[Field: TSPLVchALterID]
+;	
+;	Use	: Name Field
+;	Set as	: $AlterID
+;	JSON Tag	: "Alter_Id"
+;	
+;
+;[Field: TSPLVchNumber]
+;
+;	Use : NameField
+;
+;	Set As : $VoucherNumber
+;
+;	JSON Tag: "Vch_Num"
+;
+; 
+;
+;[Field: TSPLVchDate]
+;
+;	Use : Uni Date Field
+;
+;	Set As : $Date
+;
+;	JSON Tag: "Vch_Dt"
+;
+; 
+;
+;[Part: TSPLVchInvJSonExp]
+;
+;	Line : TSPLVchInvJSonExp
+;
+;	Repeat : TSPLVchInvJSonExp : All Inventory Entries
+;
+;	Scroll : Vertical
+;
+; 
+;
+;[Line: TSPLVchInvJSonExp]
+;
+;	Field : TSPLVchItemName, TSPLVchItemQty
+;
+;	JSON Tag : "Items"
+;
+;	 
+;
+;[Field: TSPLVchItemName]
+;
+;	Use : NameField
+;
+;	Set As : $StockItemName
+;
+;	JSON Tag : "Stock_Item"
+;
+;	 
+;
+;[Field: TSPLVchItemQty]
+;
+;	Use : Qty Field
+;
+;	Set As : $BilledQty
+;
+;	JSON Tag: "Qty"
+;
+; 
+;
+;[Collection: TSPLVchCollection]
+;
+;	Type : Voucher
+;
+;	Fetch: VoucherNumber, Date, All Inventory Entries.*

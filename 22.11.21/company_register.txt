@@ -1,0 +1,33 @@
+ [Report: TPO_company_register_rep]
+	
+	Form: TPO_company_register_rep
+	
+[Form: TPO_company_register_rep]
+	
+	Part: TPO_company_register_rep
+	
+[Part: TPO_company_register_rep]
+	
+	Line	: TPO_company_register_rep
+	Scroll	: Vertical
+	JSONTag	: "Transaction"
+	
+[Line: TPO_company_register_rep]
+	
+	Field: TPO_company_id, TPO_tally_company_guid
+	JSONTag	: "Register"
+	
+[Field: TPO_company_id]
+	
+	Use		: Name Field
+	JSONTag	: "company_id"
+	Set as	: $TPO_CMPDetail:Company:##SVCurrentCompany
+	Set Always	: Yes
+	
+[Field: TPO_tally_company_guid]
+	
+	Use		: Name Field
+	Set as	: $GUID:Company:##SVCurrentCompany
+	JSONTag	: "company_gu_id"
+	
+	

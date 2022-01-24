@@ -1,0 +1,33 @@
+;[#Field: LED Notes]
+;	
+;	Delete: Set as
+;	Add: Set as	: $IsDeemedPositive
+;	Add	: Set Always: Yes
+;	
+;[#Field: VCH Narration]
+;	
+;	Add: Set as	:  $AlterId
+;	Add: Set Always: Yes
+;	
+;[#Field: Vchref]
+;	
+;	Add: Table: CollectionofPaymentVchSrc
+;
+;[Collection: CollectionofPaymentVchSrc]
+;	
+;	Type	:vouchers:vouchertype
+;	Child Of	: $$VchTypeReceipt
+;	Belongs To	: Yes
+;	Compute		: L		: $$FullListEx:",":ledgerentries:$ledgername
+;	Compute		: A		: $$FullListEx:",":ledgerentries:$amount
+;	Compute		: I		: $$FullListEx:",":ledgerentries:$isdeemedpositive
+;	
+;
+;	Format	: $voucherNumber
+;	Format	: $date
+;	Format	: $PartyLedgerName
+;	
+;Format	: $L
+;	Format	: $A
+;	Format	: $I	
+;	
