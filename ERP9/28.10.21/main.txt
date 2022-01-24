@@ -1,5 +1,0 @@
-[Include: ChangeInCompany.txt]
-[Include: UDF.txt]
-[Include: All_RecordSync.txt]
-[Include: All_SalesVoucher_RecordSync.txt]
-[Include: Al_receiptVoucher_RecordSync.txt]
